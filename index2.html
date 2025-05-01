@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Fraud Detection System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #0d0d0d;
+            font-family: 'Roboto', sans-serif;
+            color: #ffffff;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #660000;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 18px;
+            border-bottom: 2px solid #FFFDD0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+        }
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            color: #ff0033;
+            font-weight: 700;
+            text-transform: uppercase;
+            text-shadow: 1px 1px 5px #b30024;
+        }
+        h2 {
+            text-align: center;
+            margin: 20px 0;
+            color: #ffffff;
+            font-weight: 500;
+            text-shadow: 1px 1px 3px #99001e;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #0d0d0d;
+            border: 2px solid #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(255, 0, 51, 0.5);
+        }
+        .card {
+            background-color: #1a1a1a;
+            border: 1px solid #ffffff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(255, 0, 51, 0.3);
+        }
+        .btn-primary, .btn-success {
+            background-color: #660000;
+            border: none;
+            color: #ffffff;
+            font-weight: 500;
+            font-size: 16px;
+            padding: 10px 15px;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(102, 0, 0, 0.5);
+        }
+        .btn-primary:hover, .btn-success:hover {
+            background-color: #550000;
+            box-shadow: 0 4px 10px rgba(102, 0, 0, 0.7);
+        }
+        .spinner {
+            display: none;
+            margin: 10px auto;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #333333;
+            border-top: 5px solid #ff0033;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .success {
+            color: #4caf50;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        .error {
+            color: #ff0033;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        .form-label {
+            font-weight: 500;
+            color: #ff0033;
+        }
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #aaaaaa;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div></div>
+        <span>AI BASED FRAUD DETECTION SYSTEM</span>
+    </div>
+    <h1>Fraud Detection System</h1>
+    <div class="container">
+        <!-- Train Models Section -->
+        <div class="card">
+            <h2>Train Models</h2>
+            <form id="train-form" method="POST" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="trainCsvFile" class="form-label">Upload Training Dataset</label>
+                    <input type="file" id="trainCsvFile" name="csvFile" class="form-control" accept=".csv" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Train Models</button>
+            </form>
+            <div class="spinner" id="train-spinner"></div>
+            <div id="train-results"></div>
+        </div>
+
+        <!-- Predict Section -->
+        <div class="card">
+            <h2>Make Predictions</h2>
+            <form id="predict-form" method="POST" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="predictCsvFile" class="form-label">Upload Dataset for Prediction</label>
+                    <input type="file" id="predictCsvFile" name="csvFile" class="form-control" accept=".csv" required>
+                </div>
+                <button id="predict-button" type="submit" class="btn btn-success" disabled>Make Predictions</button>
+            </form>
+            <div class="spinner" id="predict-spinner"></div>
+            <div id="predict-results"></div>
+        </div>
+    </div>
+    <footer>
+        © 2024 Fraud Detection System. All rights reserved.
+    </footer>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            let isTrained = false;
+
+            // Train Models
+            $('#train-form').submit(function(event) {
+                event.preventDefault();
+                var formData = new FormData($(this)[0]);
+
+                // Show spinner and clear previous messages
+                $('#train-spinner').show();
+                $('#train-results').empty();
+
+                $.ajax({
+                    url: '/train',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(data) {
+                        isTrained = true;
+                        $('#train-spinner').hide();
+                        $('#train-results').html(`
+                            <p class="success">✅ Models are successfully trained!</p>
+                            <h4>Model Metrics</h4>
+                            <h5>XGBoost:</h5>
+                            <p>Accuracy: ${data.xgb_accuracy}</p>
+                            <pre>${JSON.stringify(data.xgb_report, null, 2)}</pre>
+                            <h5>Logistic Regression:</h5>
+                            <p>Accuracy: ${data.logreg_accuracy}</p>
+                            <pre>${JSON.stringify(data.logreg_report, null, 2)}</pre>
+                        `);
+                        $('#predict-button').prop('disabled', false); // Enable Predict button
+                    },
+                    error: function(jqXHR) {
+                        $('#train-spinner').hide();
+                        $('#train-results').html(`<p class="error">Error: ${jqXHR.responseJSON.error}</p>`);
+                    }
+                });
+            });
+
+            // Make Predictions
+            $('#predict-form').submit(function(event) {
+                event.preventDefault();
+                if (!isTrained) {
+                    $('#predict-results').html('<p class="error">Please train the models first.</p>');
+                    return;
+                }
+
+                var formData = new FormData($(this)[0]);
+
+                // Show spinner and clear previous messages
+                $('#predict-spinner').show();
+                $('#predict-results').empty();
+
+                $.ajax({
+                    url: '/predict',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(data) {
+                        $('#predict-spinner').hide();
+                        $('#predict-results').html(`
+                            <h3>Prediction Results</h3>
+                            <p><b>Legal Transactions:</b> ${data.legal_transactions}</p>
+                            <p><b>Fraud Transactions:</b> ${data.fraud_transactions}</p>
+                        `);
+                    },
+                    error: function(jqXHR) {
+                        $('#predict-spinner').hide();
+                        $('#predict-results').html(`<p class="error">Error: ${jqXHR.responseJSON.error}</p>`);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
