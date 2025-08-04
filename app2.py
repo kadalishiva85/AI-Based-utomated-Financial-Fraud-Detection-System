@@ -13,7 +13,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-# Global variables for models and scaler
+# Global Variables for models and scaler
 xgb_model = None
 logreg_model = None
 scaler = None
